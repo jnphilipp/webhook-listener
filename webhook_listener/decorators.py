@@ -42,7 +42,7 @@ def verify_signature(func):
                             hashlib.sha1).hexdigest()
             signature = f'sha1={signature}'
             if compare_digest(x_hub_signature, signature):
-                func(request, *args, **kwargs)
+                func(request, webhook, *args, **kwargs)
         return HttpResponseForbidden('Signature verification failed.')
     return func_wrapper
 
