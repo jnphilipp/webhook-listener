@@ -39,5 +39,5 @@ class WebhookListenerView(generic.View):
     def post(self, request, webhook, *args, **kwargs):
         self.logger.info(f'Running webhook {webhook.name}.')
         self.logger.debug(f'Payload: {request.body}')
-        webhook.run(payload)
+        webhook.run(request.body)
         return JsonResponse({'timestamp': datetime.utcnow().isoformat()})
