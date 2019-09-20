@@ -50,6 +50,12 @@ class Command(BaseCommand):
         run_parser.add_argument('payload', nargs='?', type=FileType('r'),
                                 default=stdin, help=_('JSON payload'))
 
+        update_parser = subparsers.add_parser('update',
+                                              help=_('Update webhook command'))
+        update_parser.add_argument('name', help=_('Webhook name'))
+        update_parser.add_argument('command', nargs='?', type=FileType('r'),
+                                   default=stdin, help=_('Command'))
+
     def handle(self, *args, **options):
         try:
             if options['subcommand'] == 'add':
@@ -63,6 +69,9 @@ class Command(BaseCommand):
                 webhook = Webhook.objects.get(name=options['name'])
                 self.stdout.write(f'Running {webhook.name}.')
                 webhook.run(options['payload'].read())
+            elif options['subcommand'] == 'udapte':
+                self.update(Webhook.objects.get(name=options['name']),
+                            options['command'])
         except Webhook.DoesNotExist:
             self.stdout.write(self.style.ERROR('Webhook not found.'))
 
@@ -79,3 +88,12 @@ class Command(BaseCommand):
     def list(self):
         for webhook in Webhook.objects.all():
             self.stdout.write(f'* {webhook.name}')
+
+    def add(self, webhook, command):
+        webhook.command = command.read()
+        webhook.save()
+
+        self.stdout.write(self.style.SUCCESS('Webhook updated.'))
+        self.stdout.write(f'Name: {webhook.name}')
+        self.stdout.write(f'Token: {webhook.token}')
+        self.stdout.write(f'Command:\n{webhook.command}')
