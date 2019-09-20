@@ -39,8 +39,8 @@ def verify_signature(func):
         hook_id = json.loads(request.POST['payload'])['hook_id']
         webhook = Webhook.objects.get(hook_id=hook_id)
         x_hub_signature = request.META.get('HTTP_X_HUB_SIGNATURE')
-        signature = f'sha1={new(webhook.token, request.body,
-                                hashlib.sha1).hexdigest()}'
+        signature = new(webhook.token, request.body, hashlib.sha1).hexdigest()
+        signature = f'sha1={signature}'
         if not compare_digest(x_hub_signature, signature):
             return HttpResponseForbidden('Signature verification failed.')
 
@@ -60,7 +60,7 @@ def _worker():
         func, args, kwargs = _queue.get()
         try:
             func(*args, **kwargs)
-        except:
+        except Exception:
             import traceback
             details = traceback.format_exc()
             mail_admins('Background process exception', details)
