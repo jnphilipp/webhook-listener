@@ -6,3 +6,5 @@ static/*
 media/*
 *.sublime-project
 *.sublime-workspace
+db.sqlite3
+webhook_listener/migrations/
