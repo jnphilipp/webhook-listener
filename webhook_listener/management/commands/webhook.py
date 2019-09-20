@@ -33,7 +33,6 @@ class Command(BaseCommand):
 
         add_parser = subparsers.add_parser('add', help=_('Add new Webhook'))
         add_parser.add_argument('name', help=_('Webhook name'))
-        add_parser.add_argument('hook-id', help=_('Hub Webhook ID'))
         add_parser.add_argument('command', nargs='?', type=FileType('r'),
                                 default=stdin, help=_('Command'))
         add_parser.add_argument('-t', '--token', default=None,
@@ -54,7 +53,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         try:
             if options['subcommand'] == 'add':
-                self.add(options['name'], options['hook-id'], options['token'],
+                self.add(options['name'], options['token'],
                          options['command'])
             elif options['subcommand'] == 'delete':
                 Webhook.objects.get(name=options['name']).delete()
@@ -67,17 +66,16 @@ class Command(BaseCommand):
         except Webhook.DoesNotExist:
             self.stdout.write(self.style.ERROR('Webhook not found.'))
 
-    def add(self, name, hook_id, token, command):
+    def add(self, name, token, command):
         if token is None:
             token = ''.join('%02x' % i for i in os.urandom(32))
-        webhook = Webhook.objects.create(name=name, hook_id=hook_id,
-                                         token=token, command=command.read())
+        webhook = Webhook.objects.create(name=name, token=token,
+                                         command=command.read())
         self.stdout.write(self.style.SUCCESS('Webhook created.'))
         self.stdout.write(f'Name: {webhook.name}')
-        self.stdout.write(f'Hook ID: {webhook.hook_id}')
         self.stdout.write(f'Token: {webhook.token}')
         self.stdout.write(f'Command:\n{webhook.command}')
 
     def list(self):
         for webhook in Webhook.objects.all():
-            self.stdout.write(f'* {webhook.name} [{webhook.hook_id}]')
+            self.stdout.write(f'* {webhook.name}')

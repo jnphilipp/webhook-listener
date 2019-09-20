@@ -34,7 +34,6 @@ class Webhook(models.Model):
                                       verbose_name=_('Updated at'))
 
     name = SingleLineTextField(unique=True, verbose_name=_('Name'))
-    hook_id = SingleLineTextField(unique=True, verbose_name=_('Hook ID'))
     token = SingleLineTextField(verbose_name=_('Token'))
     command = models.TextField(verbose_name=_('Command'))
 
