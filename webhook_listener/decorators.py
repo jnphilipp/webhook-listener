@@ -19,6 +19,7 @@
 import atexit
 import hashlib
 import json
+import logging
 import threading
 
 from django.conf import settings
@@ -29,6 +30,9 @@ from hmac import compare_digest, new
 from queue import Queue
 
 
+logger = logging.getLogger('django')
+
+
 def verify_signature(func):
     @wraps(func)
     def func_wrapper(request, *args, **kwargs):
@@ -37,13 +41,18 @@ def verify_signature(func):
             return HttpResponseNotAllowed(['POST'])
 
         x_hub_signature = request.META.get('HTTP_X_HUB_SIGNATURE')
+        auth_webhook = None
         for webhook in Webhook.objects.all():
             signature = new(webhook.token.encode('utf-8'), request.body,
                             hashlib.sha1).hexdigest()
             signature = f'sha1={signature}'
+            logger.debug(f'Checking signatures {x_hub_signature} == ' +
+                         f'{signature}.')
             if compare_digest(x_hub_signature, signature):
-                func(request, webhook, *args, **kwargs)
-        return HttpResponseForbidden('Signature verification failed.')
+                auth_webhook = webhook
+        if auth_webhook is None:
+            return HttpResponseForbidden('Signature verification failed.')
+        return func(request, auth_webhook, *args, **kwargs)
     return func_wrapper
 
 
