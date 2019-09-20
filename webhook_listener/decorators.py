@@ -27,13 +27,13 @@ from django.http import HttpResponseForbidden, HttpResponseNotAllowed
 from functools import wraps
 from hmac import compare_digest, new
 from queue import Queue
-from webhook_listener.models import Webhook
 
 
 def verify_signature(func):
     @wraps(func)
     def func_wrapper(request, *args, **kwargs):
-        if request.method != 'Post':
+        from webhook_listener.models import Webhook
+        if request.method != 'POST':
             return HttpResponseNotAllowed(['POST'])
 
         hook_id = json.loads(request.POST['payload'])['hook_id']
