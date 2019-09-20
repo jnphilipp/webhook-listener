@@ -38,7 +38,7 @@ class WebhookListenerView(generic.View):
 
     def post(self, request, *args, **kwargs):
         try:
-            payload = json.loads(request.POST['payload'])
+            payload = json.loads(request.POST.get('payload'))
             webhook = Webhook.objects.get(hook_id=payload['hook_id'])
             self.logger.info(f'Running webhook {webhook.name} ' +
                              f'[{webhook.hook_id}].')
