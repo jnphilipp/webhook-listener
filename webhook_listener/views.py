@@ -38,11 +38,11 @@ class WebhookListenerView(generic.View):
 
     def post(self, request, *args, **kwargs):
         try:
-            payload = json.loads(request.POST.get('payload'))
+            payload = json.loads(request.body)
             webhook = Webhook.objects.get(hook_id=payload['hook_id'])
             self.logger.info(f'Running webhook {webhook.name} ' +
                              f'[{webhook.hook_id}].')
-            self.logger.debug(f'Payload: {request}')
+            self.logger.debug(f'Payload: {request.body}')
             webhook.run(payload)
             return JsonResponse({'timestamp': datetime.utcnow().isoformat()})
         except Webhook.DoesNotExist:

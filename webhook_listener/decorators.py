@@ -36,10 +36,10 @@ def verify_signature(func):
         if request.method != 'POST':
             return HttpResponseNotAllowed(['POST'])
 
-        hook_id = json.loads(request.POST.get('payload'))['hook_id']
+        hook_id = json.loads(request.body)['hook_id']
         webhook = Webhook.objects.get(hook_id=hook_id)
         x_hub_signature = request.META.get('HTTP_X_HUB_SIGNATURE')
-        signature = new(webhook.token, request.body, hashlib.sha1).hexdigest()
+        signature = new(webhook.token.encode('utf-8'), request.body, hashlib.sha1).hexdigest()
         signature = f'sha1={signature}'
         if not compare_digest(x_hub_signature, signature):
             return HttpResponseForbidden('Signature verification failed.')
