@@ -26,7 +26,7 @@ from webhook_listener.models import Webhook
 
 
 class Command(BaseCommand):
-    help = 'Manage webhooks.'
+    help = _('Manage webhooks.')
 
     def add_arguments(self, parser):
         subparsers = parser.add_subparsers(dest='subcommand')
@@ -40,8 +40,11 @@ class Command(BaseCommand):
                                        'random token will be generated.'))
 
         delete_parser = subparsers.add_parser('delete',
-                                              help='Delete a Webhook')
-        delete_parser.add_argument('name', help='Webhook name')
+                                              help=_('Delete a Webhook'))
+        delete_parser.add_argument('name', help=_('Webhook name'))
+
+        info_parser = subparsers.add_parser('info', help=_('Info'))
+        info_parser.add_argument('name', help=_('Webhook name'))
 
         list_parser = subparsers.add_parser('list', help=_('List Webhooks'))
 
@@ -63,13 +66,15 @@ class Command(BaseCommand):
                          options['command'])
             elif options['subcommand'] == 'delete':
                 Webhook.objects.get(name=options['name']).delete()
+            elif options['subcommand'] == 'info':
+                self.info(Webhook.objects.get(name=options['name']))
             elif options['subcommand'] == 'list':
                 self.list()
             elif options['subcommand'] == 'run':
                 webhook = Webhook.objects.get(name=options['name'])
                 self.stdout.write(f'Running {webhook.name}.')
                 webhook.run(options['payload'].read())
-            elif options['subcommand'] == 'udapte':
+            elif options['subcommand'] == 'update':
                 self.update(Webhook.objects.get(name=options['name']),
                             options['command'])
         except Webhook.DoesNotExist:
@@ -81,6 +86,9 @@ class Command(BaseCommand):
         webhook = Webhook.objects.create(name=name, token=token,
                                          command=command.read())
         self.stdout.write(self.style.SUCCESS('Webhook created.'))
+        self.info(webhook)
+
+    def info(self, webhook):
         self.stdout.write(f'Name: {webhook.name}')
         self.stdout.write(f'Token: {webhook.token}')
         self.stdout.write(f'Command:\n{webhook.command}')
@@ -89,11 +97,9 @@ class Command(BaseCommand):
         for webhook in Webhook.objects.all():
             self.stdout.write(f'* {webhook.name}')
 
-    def add(self, webhook, command):
+    def update(self, webhook, command):
         webhook.command = command.read()
         webhook.save()
 
         self.stdout.write(self.style.SUCCESS('Webhook updated.'))
-        self.stdout.write(f'Name: {webhook.name}')
-        self.stdout.write(f'Token: {webhook.token}')
-        self.stdout.write(f'Command:\n{webhook.command}')
+        self.info(webhook)
