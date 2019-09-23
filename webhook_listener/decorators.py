@@ -36,23 +36,24 @@ logger = logging.getLogger('django')
 def verify_signature(func):
     @wraps(func)
     def func_wrapper(request, *args, **kwargs):
-        from webhook_listener.models import Webhook
+        from webhook_listener.models import Token
         if request.method != 'POST':
             return HttpResponseNotAllowed(['POST'])
 
+        verfied = False
         x_hub_signature = request.META.get('HTTP_X_HUB_SIGNATURE')
-        auth_webhook = None
-        for webhook in Webhook.objects.all():
-            signature = new(webhook.token.encode('utf-8'), request.body,
+        for token in Token.objects.all():
+            signature = new(token.secret.encode('utf-8'), request.body,
                             hashlib.sha1).hexdigest()
             signature = f'sha1={signature}'
             logger.debug(f'Checking signatures {x_hub_signature} == ' +
                          f'{signature}.')
-            if compare_digest(x_hub_signature, signature):
-                auth_webhook = webhook
-        if auth_webhook is None:
+            verfied = compare_digest(x_hub_signature, signature)
+            if verfied:
+                break
+        if not verfied:
             return HttpResponseForbidden('Signature verification failed.')
-        return func(request, auth_webhook, *args, **kwargs)
+        return func(request, *args, **kwargs)
     return func_wrapper
 
 

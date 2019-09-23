@@ -18,6 +18,7 @@
 
 import json
 import logging
+import re
 
 from datetime import datetime
 from django.conf import settings
@@ -36,8 +37,24 @@ class WebhookListenerView(generic.View):
         super(generic.View, self).__init__(*args, **kwargs)
         self.logger = logging.getLogger('webhook_listener.WebhookListenerView')
 
-    def post(self, request, webhook, *args, **kwargs):
-        self.logger.info(f'Running webhook {webhook.name}.')
+    def post(self, request, *args, **kwargs):
+        delivery = request.META.get('HTTP_X_GITHUB_DELIVERY')
+        event_type = request.META.get('HTTP_X_GITHUB-EVENT')
+        self.logger.info(f'{event_type}: {delivery}')
         self.logger.debug(f'Payload: {request.body}')
-        webhook.run(request.body)
-        return JsonResponse({'timestamp': datetime.utcnow().isoformat()})
+
+        payload = json.loads(request.body)
+        repo_name = payload['repository']['full_name']
+
+        webhooks = []
+        for webhook in Webhook.objects.all():
+            if re.fullmatch(fr'{webhook.re_path}', request.path_info) and \
+                    re.fullmatch(fr'{webhook.event_type}', event_type) and \
+                    re.fullmatch(fr'{webhook.repo_name}', repo_name):
+                self.logger.info(f'Running webhook {webhook.name}.')
+                webhook.run(request.body)
+                webhooks.append(webhook)
+        return JsonResponse({
+            'timestamp': datetime.utcnow().isoformat(),
+            'webhooks': [webhook.name for webhook in webhooks]
+        })

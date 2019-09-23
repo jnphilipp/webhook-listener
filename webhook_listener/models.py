@@ -27,6 +27,19 @@ from webhook_listener.decorators import postpone
 from webhook_listener.fields import SingleLineTextField
 
 
+class Token(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True,
+                                      verbose_name=_('Created at'))
+    updated_at = models.DateTimeField(auto_now=True,
+                                      verbose_name=_('Updated at'))
+
+    secret = SingleLineTextField(unique=True, verbose_name=_('Secret'))
+
+    class Meta:
+        verbose_name = _('Token')
+        verbose_name_plural = _('Tokens')
+
+
 class Webhook(models.Model):
     created_at = models.DateTimeField(auto_now_add=True,
                                       verbose_name=_('Created at'))
@@ -34,7 +47,16 @@ class Webhook(models.Model):
                                       verbose_name=_('Updated at'))
 
     name = SingleLineTextField(unique=True, verbose_name=_('Name'))
-    token = SingleLineTextField(verbose_name=_('Token'))
+    re_path = SingleLineTextField(default='*',
+                                  verbose_name=_('Regex for matching URI.'))
+    event_type = SingleLineTextField(default='*',
+                                     verbose_name=_('Regex for matching ' +
+                                                    'X-GitHub-Delivery ' +
+                                                    'header.'))
+    repo_name = SingleLineTextField(default='*',
+                                    verbose_name=_('Regex for matching ' +
+                                                   'repository/full_name ' +
+                                                   'from payload.'))
     command = models.TextField(verbose_name=_('Command'))
 
     @postpone

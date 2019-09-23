@@ -31,39 +31,51 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         subparsers = parser.add_subparsers(dest='subcommand')
 
-        add_parser = subparsers.add_parser('add', help=_('Add new Webhook'))
-        add_parser.add_argument('name', help=_('Webhook name'))
-        add_parser.add_argument('command', nargs='?', type=FileType('r'),
-                                default=stdin, help=_('Command'))
-        add_parser.add_argument('-t', '--token', default=None,
-                                help=_('Secret token, if none is given a ' +
-                                       'random token will be generated.'))
+        add = subparsers.add_parser('add', help=_('Add a new webhook.'))
+        add.add_argument('name', type=str, help=_('Name'))
+        add.add_argument('command', nargs='?', type=FileType('r'),
+                         default=stdin, help=_('Command, default stdin.'))
+        add.add_argument('--re-path', type=str, default='*',
+                         help=_('Regex for matching URI, default "*".'))
+        add.add_argument('--event-type', type=str, default='*',
+                         help=_('Regex for matching X-GitHub-Delivery header' +
+                                ', default "*".'))
+        add.add_argument('--repo-name', type=str, default='*',
+                         help=_('Regex for matching repository/full_name from' +
+                                ' payload, default "*".'))
 
-        delete_parser = subparsers.add_parser('delete',
-                                              help=_('Delete a Webhook'))
-        delete_parser.add_argument('name', help=_('Webhook name'))
+        delete = subparsers.add_parser('delete', help=_('Delete a webhook.'))
+        delete.add_argument('name', type=str, help=_('Name'))
 
-        info_parser = subparsers.add_parser('info', help=_('Info'))
-        info_parser.add_argument('name', help=_('Webhook name'))
+        info = subparsers.add_parser('info', help=_('Info'))
+        info.add_argument('name', type=str, help=_('Name'))
 
-        list_parser = subparsers.add_parser('list', help=_('List Webhooks'))
+        subparsers.add_parser('list', help=_('List webhooks.'))
 
-        run_parser = subparsers.add_parser('run', help=_('Run a Webhook'))
-        run_parser.add_argument('name', help=_('Webhook name'))
-        run_parser.add_argument('payload', nargs='?', type=FileType('r'),
-                                default=stdin, help=_('JSON payload'))
+        run = subparsers.add_parser('run', help=_('Run a webhook.'))
+        run.add_argument('name', type=str, help=_('Name'))
+        run.add_argument('payload', nargs='?', type=FileType('r'),
+                         default=stdin, help=_('JSON payload'))
 
-        update_parser = subparsers.add_parser('update',
-                                              help=_('Update webhook command'))
-        update_parser.add_argument('name', help=_('Webhook name'))
-        update_parser.add_argument('command', nargs='?', type=FileType('r'),
-                                   default=stdin, help=_('Command'))
+        update = subparsers.add_parser('update', help=_('Update a webhook.'))
+        update.add_argument('name', type=str, help=_('Name'))
+        update.add_argument('command', nargs='?', type=FileType('r'),
+                            default=stdin, help=_('Command, default stdin'))
+        update.add_argument('--re-path', type=str, default=None,
+                            help=_('Regex for matching URI.'))
+        update.add_argument('--event-type', type=str, default=None,
+                            help=_('Regex for matching X-GitHub-Delivery' +
+                                   ' header.'))
+        update.add_argument('--repo-name', type=str, default=None,
+                            help=_('Regex for matching repository/' +
+                                   'full_name from payload.'))
 
     def handle(self, *args, **options):
         try:
             if options['subcommand'] == 'add':
-                self.add(options['name'], options['token'],
-                         options['command'])
+                self.add(options['name'], options['command'],
+                         options['re_path'], options['event_type'],
+                         options['repo_name'])
             elif options['subcommand'] == 'delete':
                 Webhook.objects.get(name=options['name']).delete()
             elif options['subcommand'] == 'info':
@@ -76,29 +88,43 @@ class Command(BaseCommand):
                 webhook.run(options['payload'].read())
             elif options['subcommand'] == 'update':
                 self.update(Webhook.objects.get(name=options['name']),
-                            options['command'])
+                            options['command'], options['re_path'],
+                            options['event_type'], options['repo_name'])
         except Webhook.DoesNotExist:
             self.stdout.write(self.style.ERROR('Webhook not found.'))
 
-    def add(self, name, token, command):
+    def add(self, name, command, re_path, event_type, repo_name):
         if token is None:
             token = ''.join('%02x' % i for i in os.urandom(32))
-        webhook = Webhook.objects.create(name=name, token=token,
+        webhook = Webhook.objects.create(name=name, re_path=re_path,
+                                         event_type=event_type,
+                                         repo_name=repo_name,
                                          command=command.read())
         self.stdout.write(self.style.SUCCESS('Webhook created.'))
         self.info(webhook)
 
     def info(self, webhook):
         self.stdout.write(f'Name: {webhook.name}')
-        self.stdout.write(f'Token: {webhook.token}')
+        self.stdout.write(f'Re-path: {webhook.re_path}')
+        self.stdout.write(f'Event-type: {webhook.event_type}')
+        self.stdout.write(f'Repo-name: {webhook.repo_name}')
         self.stdout.write(f'Command:\n{webhook.command}')
 
     def list(self):
         for webhook in Webhook.objects.all():
             self.stdout.write(f'* {webhook.name}')
 
-    def update(self, webhook, command):
-        webhook.command = command.read()
+    def update(self, webhook, command, re_path, event_type, repo_name):
+        if command is not None:
+            command = command.read()
+            if command:
+                webhook.command = command
+        if re_path is not None:
+            webhook.re_path = re_path
+        if event_type is not None:
+            webhook.event_type = event_type
+        if repo_name is not None:
+            webhook.repo_name = repo_name
         webhook.save()
 
         self.stdout.write(self.style.SUCCESS('Webhook updated.'))
