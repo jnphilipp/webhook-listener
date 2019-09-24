@@ -45,7 +45,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         try:
             if options['subcommand'] == 'add':
-                self.add(options['token'])
+                self.add(options['secret'])
             elif options['subcommand'] == 'delete':
                 Token.objects.get(id=options['id']).delete()
             elif options['subcommand'] == 'info':
