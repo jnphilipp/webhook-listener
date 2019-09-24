@@ -39,7 +39,7 @@ class WebhookListenerView(generic.View):
 
     def post(self, request, *args, **kwargs):
         delivery = request.META.get('HTTP_X_GITHUB_DELIVERY')
-        event_type = request.META.get('HTTP_X_GITHUB-EVENT')
+        event_type = request.META.get('HTTP_X_GITHUB_EVENT')
         self.logger.info(f'{event_type}: {delivery}')
         self.logger.debug(f'Payload: {request.body}')
 
@@ -48,11 +48,15 @@ class WebhookListenerView(generic.View):
 
         webhooks = []
         for webhook in Webhook.objects.all():
-            if re.fullmatch(fr'{webhook.re_path}', request.path_info) and \
-                    re.fullmatch(fr'{webhook.event_type}', event_type) and \
-                    re.fullmatch(fr'{webhook.repo_name}', repo_name):
-                self.logger.info(f'Running webhook {webhook.name}.')
-                webhook.run(request.body)
+            if (event_type is 'ping' and
+                    re.fullmatch(fr'{webhook.re_path}', request.path_info) and
+                    re.fullmatch(fr'{webhook.repo_name}', repo_name)) or \
+                    (re.fullmatch(fr'{webhook.re_path}', request.path_info) and
+                     re.fullmatch(fr'{webhook.event_type}', event_type) and
+                     re.fullmatch(fr'{webhook.repo_name}', repo_name)):
+                self.logger.info(f'Webhook {webhook.name} matched.')
+                if event_type is not 'ping':
+                    webhook.run(request.body)
                 webhooks.append(webhook)
         return JsonResponse({
             'timestamp': datetime.utcnow().isoformat(),
