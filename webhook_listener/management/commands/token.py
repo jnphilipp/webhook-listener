@@ -52,7 +52,7 @@ class Command(BaseCommand):
                 self.info(Token.objects.get(id=options['id']))
             elif options['subcommand'] == 'list':
                 self.list()
-        except Webhook.DoesNotExist:
+        except Token.DoesNotExist:
             self.stdout.write(self.style.ERROR('Token not found.'))
 
     def add(self, secret):
