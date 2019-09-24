@@ -94,8 +94,6 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR('Webhook not found.'))
 
     def add(self, name, command, re_path, event_type, repo_name):
-        if token is None:
-            token = ''.join('%02x' % i for i in os.urandom(32))
         webhook = Webhook.objects.create(name=name, re_path=re_path,
                                          event_type=event_type,
                                          repo_name=repo_name,
