@@ -26,7 +26,7 @@ from webhook_listener.models import Webhook
 
 
 class Command(BaseCommand):
-    help = _('Manage webhooks.')
+    help = 'Manage webhooks.'
 
     def add_arguments(self, parser):
         subparsers = parser.add_subparsers(dest='subcommand')
@@ -41,8 +41,8 @@ class Command(BaseCommand):
                          help=_('Regex for matching X-GitHub-Delivery header' +
                                 ', default "*".'))
         add.add_argument('--repo-name', type=str, default='*',
-                         help=_('Regex for matching repository/full_name from' +
-                                ' payload, default "*".'))
+                         help=_('Regex for matching repository/full_name ' +
+                                'from payload, default "*".'))
 
         delete = subparsers.add_parser('delete', help=_('Delete a webhook.'))
         delete.add_argument('name', type=str, help=_('Name'))

@@ -24,7 +24,7 @@ from webhook_listener.models import Token
 
 
 class Command(BaseCommand):
-    help = _('Manage tokens.')
+    help = 'Manage tokens.'
 
     def add_arguments(self, parser):
         subparsers = parser.add_subparsers(dest='subcommand')
