@@ -48,14 +48,14 @@ class WebhookListenerView(generic.View):
 
         webhooks = []
         for webhook in Webhook.objects.all():
-            if (event_type is 'ping' and
+            if (event_type == 'ping' and
                     re.fullmatch(fr'{webhook.re_path}', request.path_info) and
                     re.fullmatch(fr'{webhook.repo_name}', repo_name)) or \
                     (re.fullmatch(fr'{webhook.re_path}', request.path_info) and
                      re.fullmatch(fr'{webhook.event_type}', event_type) and
                      re.fullmatch(fr'{webhook.repo_name}', repo_name)):
                 self.logger.info(f'Webhook {webhook.name} matched.')
-                if event_type is not 'ping':
+                if event_type != 'ping':
                     webhook.run(request.body)
                 webhooks.append(webhook)
         return JsonResponse({
