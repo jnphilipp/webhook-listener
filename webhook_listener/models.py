@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with webhook_listener. If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import os
 import stat
 import subprocess
@@ -23,6 +24,7 @@ import subprocess
 from django.db import models
 from django.template.defaultfilters import slugify
 from django.utils.translation import ugettext_lazy as _
+from threading import Thread
 from webhook_listener.decorators import postpone
 from webhook_listener.fields import SingleLineTextField
 
@@ -61,6 +63,17 @@ class Webhook(models.Model):
 
     @postpone
     def run(self, payload=""):
+        def log(stream, loggercb):
+            while True:
+                out = stream.readline()
+                if out:
+                    loggercb(out.rstrip())
+                else:
+                    break
+
+        logger = logging.getLogger('django')
+        logger.info(f'Runnng webhook {self.name} command.')
+
         slug = slugify(self.name)
         with open(f'/tmp/{slug}_webhook', 'w', encoding='utf8') as f:
             f.write(self.command)
@@ -69,7 +82,22 @@ class Webhook(models.Model):
                  os.stat(f'/tmp/{slug}_webhook').st_mode | stat.S_IXUSR |
                  stat.S_IXGRP | stat.S_IXOTH)
 
-        subprocess.call([f'/tmp/{slug}_webhook', payload])
+        pobj = subprocess.Popen([f'/tmp/{slug}_webhook', payload],
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        stdout_thread = Thread(target=log,
+                               args=(pobj.stdout,
+                                     lambda s: logger.log(logging.INFO, s)))
+
+        stderr_thread = Thread(target=log,
+                               args=(pobj.stderr,
+                                     lambda s: logger.log(logging.ERROR, s)))
+
+        stdout_thread.start()
+        stderr_thread.start()
+
+        while stdout_thread.isAlive() and stderr_thread.isAlive():
+            pass
 
     def __str__(self):
         return self.name
