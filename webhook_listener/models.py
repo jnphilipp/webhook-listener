@@ -67,7 +67,7 @@ class Webhook(models.Model):
             while True:
                 out = stream.readline()
                 if out:
-                    loggercb(out.rstrip())
+                    loggercb(out.decode('utf-8').rstrip())
                 else:
                     break
 
