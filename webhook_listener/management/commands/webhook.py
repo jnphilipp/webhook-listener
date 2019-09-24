@@ -35,14 +35,14 @@ class Command(BaseCommand):
         add.add_argument('name', type=str, help=_('Name'))
         add.add_argument('command', nargs='?', type=FileType('r'),
                          default=stdin, help=_('Command, default stdin.'))
-        add.add_argument('--re-path', type=str, default='*',
-                         help=_('Regex for matching URI, default "*".'))
-        add.add_argument('--event-type', type=str, default='*',
+        add.add_argument('--re-path', type=str, default='-*',
+                         help=_('Regex for matching URI, default ".*".'))
+        add.add_argument('--event-type', type=str, default='-*',
                          help=_('Regex for matching X-GitHub-Delivery header' +
-                                ', default "*".'))
-        add.add_argument('--repo-name', type=str, default='*',
+                                ', default ".*".'))
+        add.add_argument('--repo-name', type=str, default='-*',
                          help=_('Regex for matching repository/full_name ' +
-                                'from payload, default "*".'))
+                                'from payload, default ".*".'))
 
         delete = subparsers.add_parser('delete', help=_('Delete a webhook.'))
         delete.add_argument('name', type=str, help=_('Name'))

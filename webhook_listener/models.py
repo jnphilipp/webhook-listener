@@ -47,13 +47,13 @@ class Webhook(models.Model):
                                       verbose_name=_('Updated at'))
 
     name = SingleLineTextField(unique=True, verbose_name=_('Name'))
-    re_path = SingleLineTextField(default='*',
+    re_path = SingleLineTextField(default='.*',
                                   verbose_name=_('Regex for matching URI.'))
-    event_type = SingleLineTextField(default='*',
+    event_type = SingleLineTextField(default='.*',
                                      verbose_name=_('Regex for matching ' +
                                                     'X-GitHub-Delivery ' +
                                                     'header.'))
-    repo_name = SingleLineTextField(default='*',
+    repo_name = SingleLineTextField(default='.*',
                                     verbose_name=_('Regex for matching ' +
                                                    'repository/full_name ' +
                                                    'from payload.'))
