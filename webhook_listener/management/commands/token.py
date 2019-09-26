@@ -47,19 +47,22 @@ class Command(BaseCommand):
             if options['subcommand'] == 'add':
                 self.add(options['secret'])
             elif options['subcommand'] == 'delete':
-                Token.objects.get(id=options['id']).delete()
+                token = Token.objects.get(id=options['id'])
+                token.delete()
+                self.stdout.write(self.style.SUCCESS(_('Token deleted.')))
+                self.info(token)
             elif options['subcommand'] == 'info':
                 self.info(Token.objects.get(id=options['id']))
             elif options['subcommand'] == 'list':
                 self.list()
         except Token.DoesNotExist:
-            self.stdout.write(self.style.ERROR('Token not found.'))
+            self.stderr.write(self.style.ERROR(_('Token not found.')))
 
     def add(self, secret):
         if secret is None:
             secret = ''.join('%02x' % i for i in os.urandom(32))
         token = Token.objects.create(secret=secret)
-        self.stdout.write(self.style.SUCCESS('Token created.'))
+        self.stdout.write(self.style.SUCCESS(_('Token created.')))
         self.info(token)
 
     def info(self, token):

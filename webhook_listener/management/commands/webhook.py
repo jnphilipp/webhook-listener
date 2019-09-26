@@ -77,7 +77,10 @@ class Command(BaseCommand):
                          options['re_path'], options['event_type'],
                          options['repo_name'])
             elif options['subcommand'] == 'delete':
-                Webhook.objects.get(name=options['name']).delete()
+                webhook = Webhook.objects.get(name=options['name'])
+                webhook.delete()
+                self.stdout.write(self.style.SUCCESS(_('Webhook deleted.')))
+                self.info(webhook)
             elif options['subcommand'] == 'info':
                 self.info(Webhook.objects.get(name=options['name']))
             elif options['subcommand'] == 'list':
@@ -91,14 +94,14 @@ class Command(BaseCommand):
                             options['command'], options['re_path'],
                             options['event_type'], options['repo_name'])
         except Webhook.DoesNotExist:
-            self.stdout.write(self.style.ERROR('Webhook not found.'))
+            self.stderr.write(self.style.ERROR(_('Webhook not found.')))
 
     def add(self, name, command, re_path, event_type, repo_name):
         webhook = Webhook.objects.create(name=name, re_path=re_path,
                                          event_type=event_type,
                                          repo_name=repo_name,
                                          command=command.read())
-        self.stdout.write(self.style.SUCCESS('Webhook created.'))
+        self.stdout.write(self.style.SUCCESS(_('Webhook created.')))
         self.info(webhook)
 
     def info(self, webhook):
@@ -125,5 +128,5 @@ class Command(BaseCommand):
             webhook.repo_name = repo_name
         webhook.save()
 
-        self.stdout.write(self.style.SUCCESS('Webhook updated.'))
+        self.stdout.write(self.style.SUCCESS(_('Webhook updated.')))
         self.info(webhook)
